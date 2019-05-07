@@ -3,9 +3,8 @@ import  glob
 from os import path
 import sys, os
 from Bio.Blast.Applications import NcbiblastnCommandline
-from Bio.Blast import NCBIXML
 import multiprocessing
-from time import sleep as sl
+import datetime
 
 def input_allele_lengths(set_wd, args):
 
@@ -150,27 +149,35 @@ def write_out(results_dict, args):
     #column names
     headers_list = ["Accession", "query", "sseqid", "pident", "length", "mismatch", "gapopen", "qstart", "qend", "sstart", "send", "evalue", "bitscore"]
 
-    #create output file and fill
-    with open(args.output_folder + '/blast_results.csv','w') as out:
+    if args.overwrite:
+        # create output file and fill
+        with open(args.output_folder + '/blast_results_.csv', 'w') as out:
+            write_out_iterator(results_dict, out, headers_list)
 
-        #for each database type
-        for key, value in results_dict.items():
-            out.write(key + " Results" + '\n')
+    else:
+        #create new output file and fill
+        time_stamp = '_'.join('_'.join(str(datetime.datetime.now()).split('.')[0].split(' ')).split(':'))
+        with open(args.output_folder + '/blast_results_' + time_stamp + '.csv','w') as out:
+            write_out_iterator(results_dict, out, headers_list)
 
-            #write out column headers
-            for col_head in headers_list:
-                out.write(col_head + ',')
-            out.write('\n')
+def write_out_iterator(results_dict, out, headers_list):
+    for key, value in results_dict.items():
+        out.write(key + " Results" + '\n')
 
-            #write out blast hits for each genome
-            for genome in results_dict[key]:
-                for match in results_dict[key][genome]:
-                    col = results_dict[key][genome][match].split('\t')
-                    out.write(genome + ',')
-                    for cell in col:
-                        out.write(cell + ',')
-                    out.write('\n')
-            out.write('\n')
+        # write out column headers
+        for col_head in headers_list:
+            out.write(col_head + ',')
+        out.write('\n')
+
+        # write out blast hits for each genome
+        for genome in results_dict[key]:
+            for match in results_dict[key][genome]:
+                col = results_dict[key][genome][match].split('\t')
+                out.write(genome + ',')
+                for cell in col:
+                    out.write(cell + ',')
+                out.write('\n')
+        out.write('\n')
 
 def parseargs(set_wd):
 
@@ -184,7 +191,9 @@ def parseargs(set_wd):
     parser.add_argument("-r", "--blast_return", default=1, type=int,
                         help="1: return only top blast hits, 2: return all blast hits")
     parser.add_argument("-o", "--output_folder", default=set_wd + "/output/",
-                        help="Output folder to save if not specified.)")
+                        help="Output folder to save if not specified.")
+    parser.add_argument("-f", "--overwrite", default=False,
+                        help="Overwride previous results output file.")
 
 
     args = parser.parse_args()
