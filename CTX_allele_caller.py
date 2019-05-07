@@ -62,13 +62,16 @@ def blast_input_against_db(strain, current_blast_db_path, gene_size_dict, args):
 
     #only want top hit
     if args.blast_return == 1:
-        blast_string = NcbiblastnCommandline(query=strain,db=blast_db_path, outfmt=6, perc_identity=50, num_threads=cpus, max_target_seqs=1)
+        blast_string = NcbiblastnCommandline(query=strain,db=blast_db_path, outfmt=6, perc_identity=50, num_threads=cpus, max_hsps=1)
         out, err = blast_string()
+        # print(out)
 
     #want all hits ##WARNING: many with low lengths
     elif args.blast_return == 2:
         blast_string = NcbiblastnCommandline(task="blastn", query=strain, db=blast_db_path, outfmt=6, perc_identity=50, num_threads=cpus)
         out, err = blast_string()
+        # print(out)
+
 
     #if not blast alignment found
     if out == '' and '1' not in args.database:
@@ -108,6 +111,9 @@ def format_blast_output(out, gene_size_dict):
 
     #checking if allele blast across multiple contigs (unassembled region)
     if len(out.split('\n')) > 2:
+
+        #check if multiple high scoring regions have been returned of full length
+        print(out)
         new_out_list = []
 
         total_length = 0
@@ -184,7 +190,7 @@ def parseargs(set_wd):
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
     parser.add_argument("-db", "--database", nargs='+',
-                        help="Choose which database to analyse genomes. ctx = 0, serogroup = 1, serotype = 2, tcp = 3, all databases = 4.\
+                        help="Choose which database to analyse genomes. ctx = 0, serogroup = 1, serotype = 2, tcp = 3 (###dont use), all databases = 4.\
                              For a combination use comman separated. Eg. 0,1,3.")
     parser.add_argument("-dir", "--strains_directory", required=True,
                         help="A directory of strains to analyse.")
