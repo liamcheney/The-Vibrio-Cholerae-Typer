@@ -5,6 +5,8 @@ import sys, os
 from Bio.Blast.Applications import NcbiblastnCommandline
 import multiprocessing
 import datetime
+import progressbar
+from operator import itemgetter
 
 def input_allele_lengths(set_wd, args):
 
@@ -45,13 +47,25 @@ def iterate_databases(databases, set_wd, args):
 
     return databases
 
+def progess_use(args):
+    number_of_genomes = len(list(glob.iglob(args.strains_directory + '/*.f*'))) + 1
+    bar = progressbar.ProgressBar(maxval=number_of_genomes,
+                                  widgets=[progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage()])
+
+    return bar
+
 def run_genomes(current_blast_db_path, gene_size_dict, args):
     print("Processing genomes")
+    # bar = progess_use(args)
+    # bar.start()
+    genome_count = 0
     results_dict = {}
     for strain in glob.iglob(args.strains_directory + '/*.f*'):
+        # bar.update(genome_count)
+        genome_count = genome_count + 1
         accession = strain.split('/')[-1].split('.')[0]
-        print(accession)
         results_dict[accession] = blast_input_against_db(strain, current_blast_db_path, gene_size_dict, args)
+    # bar.finish()
 
     return results_dict
 
@@ -62,18 +76,15 @@ def blast_input_against_db(strain, current_blast_db_path, gene_size_dict, args):
 
     #only want top hit
     if args.blast_return == 1:
-        blast_string = NcbiblastnCommandline(query=strain,db=blast_db_path, outfmt=6, perc_identity=50, num_threads=cpus, max_hsps=1)
+        blast_string = NcbiblastnCommandline(query=strain, db=blast_db_path, outfmt=6, perc_identity=50, num_threads=cpus)
         out, err = blast_string()
-        # print(out)
 
     #want all hits ##WARNING: many with low lengths
     elif args.blast_return == 2:
         blast_string = NcbiblastnCommandline(task="blastn", query=strain, db=blast_db_path, outfmt=6, perc_identity=50, num_threads=cpus)
         out, err = blast_string()
-        # print(out)
 
-
-    #if not blast alignment found
+    #if no blast alignment found
     if out == '' and '1' not in args.database:
         blast_result_dict = {1:'No alignment found. Modify "-r 2" to see low quality hits.'}
         return blast_result_dict
@@ -89,56 +100,73 @@ def blast_input_against_db(strain, current_blast_db_path, gene_size_dict, args):
 
 def format_blast_output(out, gene_size_dict):
 
+    #split the blast result
+    blast_hits = out.split('\n')[:-1] #remove last new line char
+
+    #organise blast hits by precen of id
+    blast_hits = sorted(blast_hits, key=itemgetter(2))
+
     genome_result_dict = {}
     match = 1
 
-    #checking length of single blast alignments against query. has to be 90% similar.
-    if len(out.split('\n')) == 2:
-        col = out.split('\t')
+    # handle the single returns
+    if len(blast_hits) == 1:
+        for res in blast_hits:
+            col = res.split('\t')
+            query_length = query_length_gen(col)
 
-        query_length = query_length_gen(col)
+            #check if hit is above
+            if query_length >= 0.9 * int(gene_size_dict[col[1]]):
+                genome_result_dict[match] = out.strip('\n')
+                match = match + 1
+                return genome_result_dict
 
-        if query_length >= 0.8 * int(gene_size_dict[col[1]]):
-            genome_result_dict[match] = out.strip('\n')
-            match = match + 1
-            return genome_result_dict
-
-        else:
-            genome_result_dict[match] = out.strip('\n') + '\t' + "Only blast hit represented < 90% of alignment in genome."
-            match = match + 1
-            return genome_result_dict
+            else:
+                genome_result_dict[match] = out.strip('\n') + '\t' + "Only blast hit represented < 90% of alignment in genome."
+                match = match + 1
+                return genome_result_dict
 
 
-    #checking if allele blast across multiple contigs (unassembled region)
-    if len(out.split('\n')) > 2:
+    #handle multiple returns
+    if len(blast_hits) > 1:
+        for res in blast_hits:
+            col = res.split('\t')
+            query_length = query_length_gen(col)
 
-        #check if multiple high scoring regions have been returned of full length
-        print(out)
-        new_out_list = []
+            #if there is hit with 100% alignment and wihin query length, then return
+            if float(col[2]) == 100.00 and query_length >= 0.9 * int(gene_size_dict[col[1]]):
+                genome_result_dict[match] = '\t'.join(col)
+                match = match + 1
+                return genome_result_dict
 
-        total_length = 0
-        sep_result = out.split('\n')[:-1]
-        for res in sep_result:
-            res_col = res.split('\t')
+            else:
+            ##check if multiple high scoring regions have been returned of full length
+                new_out_list = []
 
-            query_length = query_length_gen(res_col)
+                total_length = 0
+                sep_result = out.split('\n')[:-1]
+                for res in sep_result:
+                    res_col = res.split('\t')
 
-            total_length = total_length + query_length
+                    query_length = query_length_gen(res_col)
 
-            new_out_list.append(res)
+                    total_length = total_length + query_length
 
-        new_out = '\t'.join(new_out_list)
+                    new_out_list.append(res)
 
-        if total_length >= 0.8 * int(gene_size_dict[res_col[1]]):
-            genome_result_dict[match] = new_out
-            match = match + 1
+                new_out = '\t'.join(new_out_list)
 
-            return genome_result_dict
+                if total_length >= 0.9 * int(gene_size_dict[res_col[1]]):
+                    genome_result_dict[match] = new_out
+                    match = match + 1
 
-        else:
-            genome_result_dict[match] = new_out + '\t' + "Only blast hit represented < 90% of alignment in genome."
-            match = match + 1
-            return genome_result_dict
+                    return genome_result_dict
+
+                else:
+
+                    genome_result_dict[match] = new_out + '\t' + "Only blast hit represented < 90% of alignment in genome."
+                    match = match + 1
+                    return genome_result_dict
 
 def query_length_gen(col):
 
@@ -218,4 +246,4 @@ def main():
 if __name__ == '__main__':
     main()
 
-#TODO fix serogroup output
+#TODO check if hit is within length and then 100%
