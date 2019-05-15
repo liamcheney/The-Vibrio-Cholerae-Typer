@@ -7,9 +7,10 @@ ctxB6	375
 ctxB7	375
 ctxB8	375
 ctxB9	375
-O1	555
-O139	1017
-Ogawa	865
-A266G	600
-WT	600
-non-O1/non-O139	600
+sero_O1	555
+sero_O139	1017
+tcpA_el_WT	675
+tcpA_el_A226	675
+tcpA_cla_WT	675
+rstR_cla	336
+rstR_el	339
