@@ -7,11 +7,12 @@ import multiprocessing
 import datetime
 import progressbar
 from operator import itemgetter
+from time import sleep as sl
 
 #smaller functions
 def check_databases_input(args):
     database_okay = True
-    accepted_databases = ['sero','ctxB','tcpA','rstR','bio']
+    accepted_databases = ['sero','ctxB','tcpA','rstR','bio','sxt']
     in_split = args.databases.split(',')
     for i in in_split:
         if i not in accepted_databases:
@@ -27,17 +28,11 @@ def input_allele_lengths(set_wd, args):
 def databases_list(args):
 
     input_database_list = args.databases.split(',')
-    database_dict = {}
+    database_list = []
     for el in input_database_list:
-        if el == 'bio':
-            for i in ['ctxB', 'tcpA', 'rstR']:
-                database_dict[i] = {}
-            return database_dict
+        database_list.append(el)
 
-        else:
-            database_dict[el] = {}
-
-    return database_dict
+    return database_list
 def progess_use(args):
     number_of_genomes = len(list(glob.iglob(args.strains_directory + '/*.f*'))) + 1
     bar = progressbar.ProgressBar(maxval=number_of_genomes,
@@ -56,7 +51,7 @@ def parseargs(set_wd):
 
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument("-db", "--databases", required=True,
-                        help="Databases to process. Options ctxB, tcpA, rstR, sero, bio"
+                        help="Databases to process. Options ctxB, tcpA, rstR, sero, bio, sxt"
                              "For combinations use comma seperated. Eg. ctxB,tcpA")
     parser.add_argument("-dir", "--strains_directory", required=True,
                         help="A directory of strains to analyse.")
@@ -81,21 +76,20 @@ def blast_search(set_wd, args):
 
     return results_dict
 def run_genomes(current_blast_db_path, args):
-    print("Processing genomes.")
+    print("Blasting database alleles against genomes.")
     bar = progess_use(args)
     bar.start()
     genome_count = 0
-    results_dict = {}
+    blast_results_dict = {}
     for strain in glob.iglob(args.strains_directory + '/*.f*'):
         bar.update(genome_count)
         genome_count = genome_count + 1
         accession = strain.split('/')[-1].split('.')[0]
-        results_dict[accession] = blast_input_against_db(strain, current_blast_db_path, args)
+        blast_result = blast_input_against_db(strain, current_blast_db_path, args)
+        blast_results_dict[accession] = blast_result
     bar.finish()
 
-    if args.databases == 'bio':
-        biotype_results_dict = biotype_filter(results_dict)
-        results_dict = {**results_dict, **biotype_results_dict}
+    results_dict = blast_result_filtering(blast_results_dict, args)
 
     return results_dict
 def blast_input_against_db(strain, current_blast_db_path, args):
@@ -103,111 +97,249 @@ def blast_input_against_db(strain, current_blast_db_path, args):
     cpus = multiprocessing.cpu_count()
 
     #blast query database against genome
-    blast_string = NcbiblastnCommandline(task="blastn", query=strain, db=current_blast_db_path, outfmt=6, perc_identity=90, num_threads=cpus)
+    blast_string = NcbiblastnCommandline(task="blastn", query=strain, db=current_blast_db_path, outfmt=6, perc_identity=75, num_threads=cpus)
     out, err = blast_string()
 
-    #if no blast alignment found
-    if out == '':
-        blast_result_dict = {1:'No alignment found. Modify "-r 2" to see low quality hits.'}
-        return blast_result_dict
+    return out
+def blast_result_filtering(blast_results_dict, args):
 
-    # format blast result to have dict with all blast hit
-    else:
-        blast_result_dict = format_blast_output(out, args)
-        return blast_result_dict
-def format_blast_output(out, args):
-
-    # create dict of databases to fetch results from
-    databases_dict = databases_list(args)
-
-    #split the blast result
-    blast_hits = out.split('\n')[:-1] #remove last new line char
-
-    #organise blast hits by precen of id
-    blast_hits = sorted(blast_hits, key=itemgetter(2,11))
-
-    databases_dict = blast_filter(databases_dict, blast_hits, args)
-
-    return databases_dict
-def blast_filter(databases_dict, blast_hits, args):
-
+    print("Processing blast outputs.")
+    # read in file of allele lengths
     set_wd = path.dirname(path.abspath(__file__))
-
-    #read in file of allele lengths
     gene_size_dict = input_allele_lengths(set_wd, args)
 
-    for key in databases_dict:
-        result_list = []
-        allele_type = []
+    #handle the blast results and create a dict for all results
+    returning_results = {}
 
-        for element in blast_hits:
-            col = element.split('\t')
-            allele_length = gene_size_dict[col[1]]
-            query_length = int(col[3]) - int(col[4])
-            if key in col[1]:
-                # print(element)
+    #get list of databases
+    databases = databases_list(args)
 
-                ##check if hit is exact match
-                if query_length == allele_length and float(col[2]) == 100.0:
-                    result_list.append(element)
-                    allele_type.append(col[1])
+    #go over each selected databases
+    for item in databases:
 
-                elif key == 'sero' and query_length > (0.95 * allele_length) and float(col[2]) > 95.0:
-                    result_list.append(element)
-                    allele_type.append(col[1])
+        if item == 'bio':
+            returning_results[item] = biotype_filter_results(blast_results_dict, gene_size_dict)
 
-        #TODO add when have multiple 100% fragments
+        elif item == 'sero':
+            returning_results[item] = serogroup_filter_results(blast_results_dict,item, gene_size_dict)
+
+        elif item == 'sxt':
+            returning_results[item] = sxt_filter_results(blast_results_dict, item, gene_size_dict)
+
+        else:
+            returning_results[item] = remaining_filter_results(blast_results_dict, item, gene_size_dict)
+
+    return returning_results
 
 
-        result_list.insert(0, '/'.join(allele_type))
-        final_list = '\t'.join(result_list)
-        databases_dict[key] = final_list
+#handling SXT
+def sxt_filter_results(blast_results_dict, item, gene_size_dict):
+    return_dict = {}
 
-    return databases_dict
-def biotype_filter(results_dict):
+    # go over each strain result for the database
+    for strain in blast_results_dict.keys():
+        # remove non relevant results and organise list
+        format_blast_list = sxt_format_blast_output(blast_results_dict[strain], item)
 
-    #create function to check what biotype the strain is
-    biotype_results = {}
+        # check the blast results
+        return_dict[strain] = sxt_blast_filter(format_blast_list, item, gene_size_dict)
 
-    ##possible combiniations of alleles for each biotype
-    bio_classical = ['ctxB1', 'rstR_cla', 'tcpA_cla_WT']
-    bio_eltor = ['ctxB3', 'rstR_el', 'tcpA_el_WT','tcpA_el_A226']
-    bio_mozam = ['ctxB1', 'rstR_cla', 'tcpA_el_A226', 'tcpA_el_WT']
-    bio_atypical = ['ctxB1', 'rstR_cla', 'rstR_el', 'tcpA_el_A226', 'tcpA_el_WT']
+    return return_dict
 
-    #for each strain with blast results
-    for key in results_dict.keys():
-        biotype_results[key] = {}
-        #get the alleles for all blast results
-        alleles_list = []
-        for value in results_dict[key]:
-            col = results_dict[key][value].split('\t')
-            #if only a single allele present, add to list
-            if len(col[0].split('/')) == 1:
-                alleles_list.append(col[0])
+    return
+def sxt_format_blast_output(results_list, item):
 
-            #if more than one allele present
-            #add the first allele, check if next are different
-            if len(col[0].split('/')) > 1:
-                alleles_list.append(col[0].split('/')[0])
-                for frag in col[0].split('/'):
-                    if frag not in alleles_list:
-                        alleles_list.append(frag)
+    #split the blast result
+    blast_hits = results_list.split('\n')[:-1] #remove last new line char
 
-        #check strain biotype by comparing alleles against bio_lists
+    keep_list = []
+    for number in range(0, len(blast_hits), 1):
+        if item in blast_hits[number].split('\t')[1]:
+            keep_list.append(blast_hits[number])
+
+    #organise blast hits by precen of id
+    keep_list = sorted(keep_list, key=itemgetter(2,11))
+
+    return keep_list
+def sxt_blast_filter(format_blast_list, item, gene_size_dict):
+
+    result_list = []
+    allele_type = []
+    allele_asigned = []
+
+    sxt_group_dict = {'sxt_MO10':'first SXT', 'sxt_ICEVchBan5':'group 1', 'sxt_ICEVchBan9':'group 2', 'sxt_ICEVchInd4':'group 3'}
+
+    for element in format_blast_list:
+        col = element.split('\t')
+        allele_length = gene_size_dict[col[1]]
+        query_length = int(col[3]) - int(col[4])
+        if col[1].split('_')[0] not in allele_asigned:
+
+            # ##check if hit is exact match
+            if query_length == allele_length and float(col[2]) == 100:
+                result_list.append(element)
+                allele_type.append(sxt_group_dict['sxt_' + col[1].split('_')[1]])
+                allele_asigned.append(col[1])
+
+    result_list.insert(0, '/'.join(allele_type))
+    final_list = '\t'.join(result_list)
+    return final_list
+
+#handling biotyping
+def biotype_filter_results(blast_results_dict, gene_size_dict):
+
+    return_dict = {}
+
+    #go over each strain result for the database
+    for strain in blast_results_dict.keys():
+        #remove non relevant results and organise list
+        format_blast_list = biotype_format_blast_output(blast_results_dict[strain])
+
+        # process ctxB, rstR and tcpA blast results
+        result_list = biotype_blast_filter(format_blast_list, gene_size_dict)
+
+        #determine the biotype
+        return_dict[strain] = biotype_selector(result_list)
+
+    return return_dict
+def biotype_format_blast_output(results_list):
+
+    want_database_list = ['ctxB', 'tcpA', 'rstR']
+
+    #split the blast result
+    blast_hits = results_list.split('\n')[:-1] #remove last new line char
+
+    keep_list = []
+    for number in range(0, len(blast_hits), 1):
+        for item in want_database_list:
+            if item in blast_hits[number].split('\t')[1].split('_')[0]:
+                keep_list.append(blast_hits[number])
+
+    #organise blast hits by precen of id
+    keep_list = sorted(keep_list, key=itemgetter(2,11))
+
+    return keep_list
+def biotype_blast_filter(format_blast_list, gene_size_dict):
+
+    result_list = []
+    allele_type = []
+    allele_asigned = []
+
+    for element in format_blast_list:
+        col = element.split('\t')
+        allele_length = gene_size_dict[col[1]]
+        query_length = int(col[3]) - int(col[4])
+        if col[1].split('_')[0] not in allele_asigned:
+
+            # ##check if hit is exact match
+            if query_length == allele_length and float(col[2]) > 99.0:
+                result_list.append(element)
+                allele_type.append(col[1])
+                allele_asigned.append(col[1].split('_')[0])
+
+            elif query_length >= (0.99 * allele_length) and float(col[2]) > 90.0 and 'ctxB' not in col[1]:
+                result_list.append(element)
+                allele_type.append(col[1])
+                allele_asigned.append(col[1].split('_')[0])
+
+    result_list.insert(0, '/'.join(allele_type))
+    final_list = '\t'.join(result_list)
+    return final_list
+def biotype_selector(result_list):
+
+        # create function to check what biotype the strain is
+        biotype_results = []
+
+        ##possible combiniations of alleles for each biotype
+        bio_classical = ['ctxB1', 'rstR_cla', 'tcpA_cla_WT']
+        bio_eltor = ['ctxB3', 'rstR_el', 'tcpA_el_WT', 'tcpA_el_A226']
+        bio_atypical = ['ctxB1', 'ctxB7', 'rstR_cla', 'rstR_el', 'tcpA_el_A226', 'tcpA_el_WT']
+        bio_mozambique = ['ctxB1', 'tcpA_el_WT', 'rstR_cla']
+
+        col = result_list.split('\t')
+        alleles_list = col[0].split('/')
+
+        ##check strain biotype by comparing alleles against bio_lists
         if set(alleles_list).issubset(bio_classical):
-            biotype_results[key]['classical'] = alleles_list
+            biotype_results = 'classical' + '\t' + result_list
 
-        if set(alleles_list).issubset(bio_eltor):
-            biotype_results[key]['eltor'] = alleles_list
+        elif set(alleles_list).issubset(bio_eltor):
+            biotype_results = 'eltor' + '\t' + result_list
 
-        if set(alleles_list).issubset(bio_atypical):
-            biotype_results[key]['atypical'] = alleles_list
+        elif set(alleles_list).issubset(bio_mozambique):
+            biotype_results = 'mozambique' + '\t' + result_list
 
-    return biotype_results
+        elif set(alleles_list).issubset(bio_atypical):
+            biotype_results = 'atypical' + '\t' + result_list
 
+        return biotype_results
 
-#writing out
+#handling serogroup
+def serogroup_filter_results(blast_results_dict, args):
+
+            # elif key == 'sero' and query_length > (0.95 * allele_length) and float(col[2]) > 95.0:
+            #     result_list.append(element)
+            #     allele_type.append(col[1])
+
+    #TODO add when have multiple 100% fragments
+    return
+#not finished didnt need at the time when updating program
+
+#handling all ctxB, tcpA and rstR
+def remaining_filter_results(blast_results_dict, item, gene_size_dict):
+
+    return_dict = {}
+    #go over each strain result for the database
+    for strain in blast_results_dict.keys():
+        #remove non relevant results and organise list
+        format_blast_list = remaining_format_blast_output(blast_results_dict[strain], item)
+
+        #check the blast results
+        return_dict[strain] = remaining_blast_filter(format_blast_list, item, gene_size_dict)
+
+    return return_dict
+def remaining_format_blast_output(results_list, item):
+
+    #split the blast result
+    blast_hits = results_list.split('\n')[:-1] #remove last new line char
+
+    keep_list = []
+    for number in range(0, len(blast_hits), 1):
+        if item in blast_hits[number].split('\t')[1]:
+            keep_list.append(blast_hits[number])
+
+    #organise blast hits by precen of id
+    keep_list = sorted(keep_list, key=itemgetter(2,11))
+
+    return keep_list
+def remaining_blast_filter(format_blast_list, item, gene_size_dict):
+
+    result_list = []
+    allele_type = []
+    allele_asigned = []
+
+    for element in format_blast_list:
+        col = element.split('\t')
+        allele_length = gene_size_dict[col[1]]
+        query_length = int(col[3]) - int(col[4])
+        if item in col[1] and col[1].split('_')[0] not in allele_asigned:
+
+            # ##check if hit is exact match
+            if query_length == allele_length and float(col[2]) > 99.0:
+                result_list.append(element)
+                allele_type.append(col[1])
+                allele_asigned.append(item)
+
+            elif query_length >= (0.99 * allele_length) and float(col[2]) > 90.0 and 'ctxB' not in col[1]:
+                result_list.append(element)
+                allele_type.append(col[1])
+                allele_asigned.append(col[1].split('_')[0])
+
+    result_list.insert(0, '/'.join(allele_type))
+    final_list = '\t'.join(result_list)
+    return final_list
+
+##writing out
 def write_out(results_dict, args):
     print("Writing Out Results")
 
@@ -220,40 +352,36 @@ def write_out(results_dict, args):
         #create new output file and fill
         time_stamp = '_'.join('_'.join(str(datetime.datetime.now()).split('.')[0].split(' ')).split(':'))
         with open(args.output_folder + '/blast_results_' + time_stamp + '.csv','w') as out:
-            write_out_iterator(results_dict, out)
+            write_out_iterator(results_dict, out, args)
 def write_out_iterator(results_dict, out, args):
     # column names
-    headers_list = ["Accession", "allele", "query", "sseqid", "pident", "length", "mismatch", "gapopen", "qstart",
+    headers_list = ["Accession", "allele(s)", "query", "sseqid", "pident", "length", "mismatch", "gapopen", "qstart",
                     "qend", "sstart", "send", "evalue", "bitscore"]
-    biotype_headers_list = ["Accession", 'biotype', 'ctxB', 'tcpA', 'rstR']
-
-    # # write out column headers
-    if args.databases == 'bio':
-        for col_head in biotype_headers_list:
-            out.write(col_head + ',')
-        out.write('\n')
-    else:
-        for col_head in headers_list:
-            out.write(col_head + ',')
-        out.write('\n')
+    biotype_headers_list = ["Accession", 'biotype'] + headers_list[1:]
 
     for key in results_dict:
+        out.write(key + '\n')
+        #biotype has different headers
+        if key == 'bio':
+            for col_head in biotype_headers_list:
+                out.write(col_head + ',')
+            out.write('\n')
 
-        # # write out blast hits for each genome
-        for item in results_dict[key]:
-            if bool(results_dict[key][item]):
-                if args.databases == 'bio':
-                    out.write(key + ',' + item + ',')
-                    for i in results_dict[key][item]:
-                        out.write(i + ',')
-                    out.write('\n')
+        else:
+            for col_head in headers_list:
+                out.write(col_head + ',')
+            out.write('\n')
 
-                else:
-                    out.write(key + ',')
-                    col = results_dict[key][item].split('\t')
-                    for i in col:
-                        out.write(i + ',')
-                    out.write('\n')
+        for strain in results_dict[key]:
+            out.write(strain + ',')
+            col = results_dict[key][strain].split('\t')
+            for cell in col:
+                out.write(cell + ',')
+            out.write('\n')
+
+        out.write('\n')
+
+
 def main():
 
     set_wd = path.dirname(path.abspath(__file__))
@@ -263,7 +391,7 @@ def main():
         results_dict = blast_search(set_wd, args)
         write_out(results_dict, args)
     else:
-        print('One of following database(s) is incorrect :' + str(args.databases))
+        print('One of following database(s) is incorrect : ' + str(args.databases))
         sys.exit()
 
 if __name__ == '__main__':
