@@ -12,9 +12,9 @@ sero_O139	1017
 tcpA_el_WT	675
 tcpA_el_A226	675
 tcpA_cla_WT	675
+tcpA_el_var1	675
 rstR_cla	336
 rstR_el	339
-sxt_setC	534
 sxt_setD	549
 sxt_ICEVchBan5_0064	1509
 sxt_ICEVchBan5_0065	1080
@@ -22,5 +22,7 @@ sxt_ICEVchInd4_0056	1086
 sxt_ICEVchInd4_0057	1065
 sxt_ICEVchBan9_0048	2730
 sxt_ICEVchBan9_0046	1533
+sxt_ICEVchInd6_0060	1272
 sxt_MO10_s035	1200
 sxt_MO10_s029	1896
+ICE_check_setD	549
