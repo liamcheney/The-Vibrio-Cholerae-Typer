@@ -12,7 +12,7 @@ from time import sleep as sl
 #smaller functions
 def check_databases_input(args):
     database_okay = True
-    accepted_databases = ['sero','ctxB','tcpA','rstR','bio','sxt']
+    accepted_databases = ['sero','ctxB','tcpA','rstR','bio','sxt', 'ICE_check']
     in_split = args.databases.split(',')
     for i in in_split:
         if i not in accepted_databases:
@@ -51,8 +51,8 @@ def parseargs(set_wd):
 
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument("-db", "--databases", required=True,
-                        help="Databases to process. Options ctxB, tcpA, rstR, sero, bio, sxt"
-                             "For combinations use comma seperated. Eg. ctxB,tcpA")
+                        help="Databases to process. Options ctxB, tcpA, rstR, sero, bio, sxt, ICE_check. \
+                             For combinations use comma seperated. Eg. ctxB,tcpA")
     parser.add_argument("-dir", "--strains_directory", required=True,
                         help="A directory of strains to analyse.")
     parser.add_argument("-r", "--blast_return", default=1, type=int,
@@ -126,6 +126,9 @@ def blast_result_filtering(blast_results_dict, args):
         elif item == 'sxt':
             returning_results[item] = sxt_filter_results(blast_results_dict, item, gene_size_dict)
 
+        elif item == 'ICE_check':
+            returning_results[item] = ICE_check_filter_results(blast_results_dict, item, gene_size_dict)
+
         else:
             returning_results[item] = remaining_filter_results(blast_results_dict, item, gene_size_dict)
 
@@ -167,7 +170,7 @@ def sxt_blast_filter(format_blast_list, item, gene_size_dict):
     allele_type = []
     allele_asigned = []
 
-    sxt_group_dict = {'sxt_MO10':'first SXT', 'sxt_ICEVchBan5':'group 1', 'sxt_ICEVchBan9':'group 2', 'sxt_ICEVchInd4':'group 3'}
+    sxt_group_dict = {'sxt_ICEVchInd6':'group 4','sxt_MO10':'first SXT', 'sxt_ICEVchBan5':'group 1', 'sxt_ICEVchBan9':'group 2', 'sxt_ICEVchInd4':'group 3'}
 
     for element in format_blast_list:
         col = element.split('\t')
@@ -176,7 +179,7 @@ def sxt_blast_filter(format_blast_list, item, gene_size_dict):
         if col[1].split('_')[0] not in allele_asigned:
 
             # ##check if hit is exact match
-            if query_length == allele_length and float(col[2]) == 100:
+            if query_length == allele_length and float(col[2]) > 99.0:
                 result_list.append(element)
                 allele_type.append(sxt_group_dict['sxt_' + col[1].split('_')[1]])
                 allele_asigned.append(col[1])
@@ -273,6 +276,56 @@ def biotype_selector(result_list):
             biotype_results = 'atypical' + '\t' + result_list
 
         return biotype_results
+
+#checking ICEs presence
+def ICE_check_filter_results(blast_results_dict, item, gene_size_dict):
+    return_dict = {}
+
+    # go over each strain result for the database
+    for strain in blast_results_dict.keys():
+        # remove non relevant results and organise list
+        format_blast_list = ICE_check_format_blast_output(blast_results_dict[strain])
+
+        # check the blast results
+        return_dict[strain] = ICE_check_blast_filter(format_blast_list, item, gene_size_dict)
+
+    return return_dict
+
+def ICE_check_format_blast_output(results_list):
+
+    # split the blast result
+    blast_hits = results_list.split('\n')[:-1]  # remove last new line char
+
+    keep_list = []
+    for number in range(0, len(blast_hits), 1):
+        if 'setC' in blast_hits[number].split('\t')[1] or 'setD' in blast_hits[number].split('\t')[1]:
+            keep_list.append(blast_hits[number])
+
+    # organise blast hits by precen of id
+    keep_list = sorted(keep_list, key=itemgetter(2, 11))
+
+    return keep_list
+def ICE_check_blast_filter(format_blast_list, item, gene_size_dict):
+    result_list = []
+    allele_type = []
+    allele_asigned = []
+
+    for element in format_blast_list:
+        col = element.split('\t')
+        allele_length = gene_size_dict[col[1]]
+        query_length = int(col[3]) - int(col[4])
+        allele = col[1].split('_')[0]
+        if allele not in allele_asigned:
+
+            # ##check if hit is exact match
+            if query_length == allele_length and float(col[2]) > 99.0:
+                result_list.append(element)
+                allele_type.append(col[1].split('_')[-1])
+                allele_asigned.append(allele)
+
+    result_list.insert(0, '/'.join(allele_type))
+    final_list = '\t'.join(result_list)
+    return final_list
 
 #handling serogroup
 def serogroup_filter_results(blast_results_dict, args):
