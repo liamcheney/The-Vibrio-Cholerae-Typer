@@ -13,7 +13,7 @@ from Bio import SeqIO
 #smaller functions
 def check_databases_input(args):
     database_okay = True
-    accepted_databases = ['sero','ctxB','tcpA','rstR','bio','sxt', 'ICE_check', 'seventh_check', 'species_check']
+    accepted_databases = ['All','sero','ctxB','tcpA','rstR','bio','sxt', 'ICE_check', 'seventh_check', 'species_check']
     in_split = args.databases.split(',')
     for i in in_split:
         if i not in accepted_databases:
