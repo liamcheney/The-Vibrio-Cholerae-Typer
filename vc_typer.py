@@ -13,7 +13,7 @@ from Bio import SeqIO
 #smaller functions
 def check_databases_input(args):
     database_okay = True
-    accepted_databases = ['sero','ctxB','tcpA','rstR','bio','sxt', 'ICE_check', 'seventh_check', 'species_check']
+    accepted_databases = ['All','sero','ctxB','tcpA','rstR','sxt', 'ICE_check', 'seventh_check', 'species_check']
     in_split = args.databases.split(',')
     for i in in_split:
         if i not in accepted_databases:
@@ -31,7 +31,7 @@ def input_allele_lengths(set_wd, args):
 def databases_list(args):
 
     if args.databases == 'All':
-        database_list = ['sero', 'ctxB', 'tcpA', 'rstR', 'bio', 'sxt', 'ICE_check', 'seventh_check',
+        database_list = ['sero', 'ctxB', 'tcpA', 'rstR', 'sxt', 'ICE_check', 'seventh_check',
                               'species_check']
         return database_list
 
@@ -61,7 +61,7 @@ def parseargs(set_wd):
 
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument("-db", "--databases", default='All',
-                        help="Databases to process. Options ctxB, tcpA, rstR, bio, sxt, \
+                        help="Databases to process. Options ctxB, tcpA, rstR, sxt, \
                              ICE_check, seventh_check, species_check, \
                              For combinations use comma seperated. Eg. ctxB,tcpA \
                              Default is all databases.")
@@ -132,104 +132,11 @@ def blast_result_filtering(blast_results_dict, args):
 
     #go over each selected databases
     for item in databases:
-
-        if item == 'bio':
-            returning_results[item] = biotype_filter_results(blast_results_dict, gene_size_dict)
-        else:
             returning_results[item] = remaining_filter_results(blast_results_dict, item, gene_size_dict,args)
 
     return returning_results
 
-#handling biotyping
-def biotype_filter_results(blast_results_dict, gene_size_dict):
-
-    return_dict = {}
-
-    #go over each strain result for the database
-    for strain in blast_results_dict.keys():
-        #remove non relevant results and organise list
-        format_blast_list = biotype_format_blast_output(blast_results_dict[strain])
-
-        # process ctxB, rstR and tcpA blast results
-        result_list = biotype_blast_filter(format_blast_list, gene_size_dict)
-
-        #determine the biotype
-        return_dict[strain] = biotype_selector(result_list)
-
-    return return_dict
-def biotype_format_blast_output(results_list):
-
-    want_database_list = ['ctxB', 'tcpA', 'rstR']
-
-    #split the blast result
-    blast_hits = results_list.split('\n')[:-1] #remove last new line char
-
-    keep_list = []
-    for number in range(0, len(blast_hits), 1):
-        for item in want_database_list:
-            if item in blast_hits[number].split('\t')[1].split('_')[0]:
-                keep_list.append(blast_hits[number])
-
-    #organise blast hits by precen of id
-    keep_list = sorted(keep_list, key=itemgetter(2,11))
-
-    return keep_list
-def biotype_blast_filter(format_blast_list, gene_size_dict):
-
-    result_list = []
-    allele_type = []
-    allele_asigned = []
-
-    for element in format_blast_list:
-        col = element.split('\t')
-        allele_length = gene_size_dict[col[1]]
-        query_length = int(col[3]) - int(col[4])
-        if col[1].split('_')[0] not in allele_asigned:
-
-            # ##check if hit is exact match
-            if query_length == allele_length and float(col[2]) > 99.0:
-                result_list.append(element)
-                allele_type.append(col[1])
-                allele_asigned.append(col[1].split('_')[0])
-
-            elif query_length >= (0.99 * allele_length) and float(col[2]) > 90.0 and 'ctxB' not in col[1]:
-                result_list.append(element)
-                allele_type.append(col[1])
-                allele_asigned.append(col[1].split('_')[0])
-
-    result_list.insert(0, '/'.join(allele_type))
-    final_list = '\t'.join(result_list)
-    return final_list
-def biotype_selector(result_list):
-
-        # create function to check what biotype the strain is
-        biotype_results = []
-
-        ##possible combiniations of alleles for each biotype
-        bio_classical = ['ctxB1', 'rstR_cla', 'tcpA_cla_WT']
-        bio_eltor = ['ctxB3', 'rstR_el', 'tcpA_el_WT', 'tcpA_el_A226']
-        bio_atypical = ['ctxB1', 'ctxB7', 'rstR_cla', 'rstR_el', 'tcpA_el_A226', 'tcpA_el_WT']
-        bio_mozambique = ['ctxB1', 'tcpA_el_WT', 'rstR_cla']
-
-        col = result_list.split('\t')
-        alleles_list = col[0].split('/')
-
-        ##check strain biotype by comparing alleles against bio_lists
-        if set(alleles_list).issubset(bio_classical):
-            biotype_results = 'classical' + '\t' + result_list
-
-        elif set(alleles_list).issubset(bio_eltor):
-            biotype_results = 'eltor' + '\t' + result_list
-
-        elif set(alleles_list).issubset(bio_mozambique):
-            biotype_results = 'mozambique' + '\t' + result_list
-
-        elif set(alleles_list).issubset(bio_atypical):
-            biotype_results = 'atypical' + '\t' + result_list
-
-        return biotype_results
-
-#handling all alleles
+#handling alleles
 def remaining_filter_results(blast_results_dict, item, gene_size_dict,args):
 
     return_dict = {}
@@ -286,26 +193,49 @@ def write_out(results_dict, args):
         # create output file and fill
         with open(args.output_folder + '/blast_results.csv', 'w') as out:
             write_out_iterator(results_dict, out, args)
+        with open(args.output_folder + '/simple_blast_results.csv', 'w') as out:
+            simple_write_out_iterator(results_dict, out, args)
 
     else:
         #create new output file and fill
         time_stamp = '_'.join('_'.join(str(datetime.datetime.now()).split('.')[0].split(' ')).split(':'))
         with open(args.output_folder + '/blast_results_' + time_stamp + '.csv','w') as out:
             write_out_iterator(results_dict, out, args)
+        with open(args.output_folder + '/simple_blast_results.csv', 'w') as out:
+            simple_write_out_iterator(results_dict, out, args)
 def write_out_iterator(results_dict, out, args):
     # column names
     headers_list = ["Accession", "query", "sseqid", "pident", "length", "mismatch", "gapopen", "qstart",
                     "qend", "sstart", "send", "evalue", "bitscore"]
-    biotype_headers_list = ["Accession", 'biotype'] + headers_list[1:]
 
+    #writing out all outputs blast results
     for key in results_dict:
-
         #adding column headers
         out.write(key + '\n')
         for col_head in headers_list:
             out.write(col_head + ',')
         out.write('\n')
-        print(results_dict[key])
+
+        for strain in results_dict[key]:
+            out.write(strain + ',')
+            for item in results_dict[key][strain]:
+                out.write(item + ',')
+            out.write('\n')
+
+        out.write('\n')
+def simple_write_out_iterator(results_dict, out, args):
+    # column names
+    headers_list = ["Accession", "sseqid"]
+
+    # writing out all outputs blast results
+    for key in results_dict:
+        for col_head in headers_list:
+            out.write(col_head + ',')
+        out.write('\n')
+
+        for strain in results_dict[key]:
+            out.write(strain + ',' + results_dict[key][strain][0].split(',')[1] + '\n')
+        out.write('\n')
 
 def main():
 
@@ -321,6 +251,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-#TODO make multiple databases from other tool
-#TODO add abricate for antibiotic resistance
