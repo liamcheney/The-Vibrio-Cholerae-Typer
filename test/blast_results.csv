@@ -1,0 +1,11 @@
+DRR068857
+Accession,query,sseqid,pident,length,mismatch,gapopen,qstart,qend,sstart,send,evalue,bitscore,
+sero,contig00012,sero_O1,100.000,1233,0,0,106828,108060,1233,1,0.0,2224
+ctxB,contig00020,ctxB1,100.000,375,0,0,53907,54281,375,1,0.0,677
+tcpA,contig00011,tcpA_el_A226,100.000,675,0,0,44672,45346,675,1,0.0,1218
+rstR,contig00047,rstR_el,100.000,339,0,0,1238,1576,1,339,1.74e-177,612
+sxt,contig00015,sxt_ICEVchInd6_0060,100.000,1272,0,0,23887,25158,1,1272,0.0,2295
+ICE_check,contig00015,ICE_check_setD,100.000,549,0,0,68471,69019,549,1,0.0,991
+seventh_check,contig00002,seventh_check_VC2346,100.000,687,0,0,171850,172536,1,687,0.0,1240
+species_check,contig00008,species_check_ompW,100.000,416,0,0,82658,83073,416,1,0.0,751
+
