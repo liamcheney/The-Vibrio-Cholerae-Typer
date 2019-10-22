@@ -29,8 +29,12 @@ def run_main(set_wd, args):
 
         print_list = []
         for i in blast_result:
-            print_list.append(blast_result[i].split(',')[1])
-        print(accession, *print_list, sep='\t')
+            if len(blast_result[i]) == 0:
+                print_list.append('')
+
+            else:
+                print_list.append(blast_result[i].split(',')[1])
+        print(accession, *print_list, sep=',')
 
     ##writing out
     write_out(blast_result_dict, args)
@@ -80,6 +84,7 @@ def selecting_hits(sep_blast_results, gene_size_dict, args):
 
     result_dict = {}
     for key, value in sep_blast_results.items():
+        result_dict[key] = []
         format_blast_list = [x.split('\t') for x in value]
         format_blast_list.sort(key=lambda x: (float(x[2]),int(x[3])), reverse=True)
 
@@ -88,17 +93,11 @@ def selecting_hits(sep_blast_results, gene_size_dict, args):
             min_return_allele_length = int(args.length / 100 * allele_length)
             min_return_coverage = int(args.coverage / 100 * allele_length)
 
-            if args.return_all_blast:
-                if (min_return_allele_length <= int(element[3])) and (min_return_coverage <= int(element[3])):
-                    keep = ','.join(element)
-                    result_dict[key] = keep
-
-            if not args.return_all_blast:
-                if (min_return_allele_length <= int(element[3])) and (min_return_coverage <= int(element[3])):
-                    top_hit = format_blast_list[0]
-                    keep = ','.join(top_hit)
-                    result_dict[key] = keep
-                    break
+            if (min_return_allele_length <= int(element[3])) and (min_return_coverage <= int(element[3])):
+                top_hit = format_blast_list[0]
+                keep = ','.join(top_hit)
+                result_dict[key] = keep
+                break
 
     return result_dict
 
@@ -145,13 +144,16 @@ def simple_write_out_iterator(results_dict, out, args):
     for strain in results_dict:
         out.write(strain + ',')
         for gene in results_dict[strain]:
-            out.write(results_dict[strain][gene].split(',')[1] + ',')
+            if len(results_dict[strain][gene]) == 0:
+                out.write(',')
+            else:
+                out.write(results_dict[strain][gene].split(',')[1] + ',')
         out.write('\n')
 
 #smaller functions
 def check_databases_input(args):
     database_okay = True
-    accepted_databases = ['All','sero','ctxB','tcpA','rstR','sxt', 'ICE_check', 'seventh_check', 'species_check']
+    accepted_databases = ['All','sero','ctxB','tcpA','rstR','sxt', 'ICE_check', 'seventh', 'species']
     in_split = args.databases.split(',')
     for i in in_split:
         if i not in accepted_databases:
@@ -169,8 +171,8 @@ def input_allele_lengths(set_wd, args):
 def databases_list(args):
 
     if args.databases == 'All':
-        database_list = ['sero', 'ctxB', 'tcpA', 'rstR', 'sxt', 'ICE_check', 'seventh_check',
-                              'species_check']
+        database_list = ['sero', 'ctxB', 'tcpA', 'rstR', 'sxt', 'ICE_check', 'seventh',
+                              'species']
         return database_list
 
     else:
@@ -189,7 +191,7 @@ def query_length_gen(col):
         query_length = int(col[8]) - int(col[9]) + 1
 
     return query_length
-def parseargs(set_wd):
+def parseargs():
 
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument("-db", "--databases", default='All',
@@ -199,15 +201,13 @@ def parseargs(set_wd):
                              Default is all databases.")
     parser.add_argument("-dir", "--strains_directory", required=True,
                         help="A directory of strains to analyse.")
-    parser.add_argument("-r", "--return_all_blast", action='store_true',
-                        help="Return all blast hits")
     parser.add_argument("-o", "--output_folder",
                         help="Output folder to save if not specified.")
     parser.add_argument("-f", "--overwrite", action='store_true',
                         help="Overwrite previous results output file.")
-    parser.add_argument("-cov", "--coverage", default=95, type=int,
+    parser.add_argument("-cov", "--coverage", default=90, type=int,
                         help="Minimum percentage of blast query length.")
-    parser.add_argument("-len", "--length", default=95, type=int,
+    parser.add_argument("-len", "--length", default=90, type=int,
                         help="Minmum percetange gene can be missing nucleotides.")
     parser.add_argument("-t", "--threads", default=1,
                         help="Threads for computing.")
@@ -221,7 +221,7 @@ def parseargs(set_wd):
 def main():
 
     set_wd = path.dirname(path.abspath(__file__))
-    args = parseargs(set_wd)
+    args = parseargs()
     database_input = check_databases_input(args)
     if database_input:
         run_main(set_wd, args)
