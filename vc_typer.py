@@ -8,11 +8,12 @@ import datetime
 import progressbar
 from operator import itemgetter
 from time import sleep as sl
+from Bio import SeqIO
 
 #smaller functions
 def check_databases_input(args):
     database_okay = True
-    accepted_databases = ['sero','ctxB','tcpA','rstR','bio','sxt', 'ICE_check']
+    accepted_databases = ['sero','ctxB','tcpA','rstR','bio','sxt', 'ICE_check', 'seventh_check', 'species_check']
     in_split = args.databases.split(',')
     for i in in_split:
         if i not in accepted_databases:
@@ -21,18 +22,27 @@ def check_databases_input(args):
 def input_allele_lengths(set_wd, args):
 
     gene_size_dict = {}
-    for line in open(set_wd + "/allele_lengths.txt",'r').read().splitlines():
-        col = line.split('\t')
-        gene_size_dict[col[0]] = int(col[1])
+    for record in SeqIO.parse(set_wd + "/blast_db/alleles.fasta", "fasta"):
+        gene = record.id
+        length = len(str(record.seq))
+        gene_size_dict[gene] = length
+
     return gene_size_dict
 def databases_list(args):
 
-    input_database_list = args.databases.split(',')
-    database_list = []
-    for el in input_database_list:
-        database_list.append(el)
+    if args.databases == 'All':
+        database_list = ['sero', 'ctxB', 'tcpA', 'rstR', 'bio', 'sxt', 'ICE_check', 'seventh_check',
+                              'species_check']
+        return database_list
 
-    return database_list
+    else:
+        input_database_list = args.databases.split(',')
+        database_list = []
+
+        for el in input_database_list:
+            database_list.append(el)
+
+        return database_list
 def progess_use(args):
     number_of_genomes = len(list(glob.iglob(args.strains_directory + '/*.f*'))) + 1
     bar = progressbar.ProgressBar(maxval=number_of_genomes,
@@ -50,18 +60,20 @@ def query_length_gen(col):
 def parseargs(set_wd):
 
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument("-db", "--databases", required=True,
-                        help="Databases to process. Options ctxB, tcpA, rstR, bio, sxt, ICE_check. \
-                             For combinations use comma seperated. Eg. ctxB,tcpA")
+    parser.add_argument("-db", "--databases", default='All',
+                        help="Databases to process. Options ctxB, tcpA, rstR, bio, sxt, \
+                             ICE_check, seventh_check, species_check, \
+                             For combinations use comma seperated. Eg. ctxB,tcpA \
+                             Default is all databases.")
     parser.add_argument("-dir", "--strains_directory", required=True,
                         help="A directory of strains to analyse.")
-    parser.add_argument("-top", "--return_top", default=1, type=int,
-                        help="1: return only top blast hit, 2: return all blast hits")
+    parser.add_argument("-r", "--return_all_blast", action='store_true',
+                        help="Return all blast hits")
     parser.add_argument("-o", "--output_folder", default=set_wd + "/output/",
                         help="Output folder to save if not specified.")
-    parser.add_argument("-f", "--overwrite", default=False,
-                        help="Overwride previous results output file.")
-    parser.add_argument("-cov", "--coverage", default=100,
+    parser.add_argument("-f", "--overwrite", action='store_true',
+                        help="Overwrite previous results output file.")
+    parser.add_argument("-cov", "--coverage", default=95,
                         help="Minimum percentage of blast query length.")
     parser.add_argument("-len", "--length", default=95,
                         help="Minmum percetange gene can be missing nucleotides.")
@@ -100,13 +112,10 @@ def run_genomes(current_blast_db_path, args):
 
     return results_dict
 def blast_input_against_db(strain, current_blast_db_path, args):
-
-    cpus = args.threads
-
     #blast query database against genome
-    blast_string = NcbiblastnCommandline(task="blastn", query=strain, db=current_blast_db_path, outfmt=6, perc_identity=75, num_threads=cpus)
-    out, err = blast_string()
 
+    blast_string = NcbiblastnCommandline(task="blastn", query=strain, db=current_blast_db_path, outfmt=6, num_threads=args.threads)
+    out, err = blast_string()
     return out
 def blast_result_filtering(blast_results_dict, args):
 
@@ -115,7 +124,7 @@ def blast_result_filtering(blast_results_dict, args):
     set_wd = path.dirname(path.abspath(__file__))
     gene_size_dict = input_allele_lengths(set_wd, args)
 
-    #handle the blast results and create a dict for all results
+    #store the blast results and create a dict for all results
     returning_results = {}
 
     #get list of databases
@@ -126,10 +135,6 @@ def blast_result_filtering(blast_results_dict, args):
 
         if item == 'bio':
             returning_results[item] = biotype_filter_results(blast_results_dict, gene_size_dict)
-
-        # elif item == 'sero':
-        #     returning_results[item] = serogroup_filter_results(blast_results_dict,item, gene_size_dict)
-
         else:
             returning_results[item] = remaining_filter_results(blast_results_dict, item, gene_size_dict,args)
 
@@ -224,18 +229,7 @@ def biotype_selector(result_list):
 
         return biotype_results
 
-#handling serogroup
-# def serogroup_filter_results(blast_results_dict, args):
-
-            # elif key == 'sero' and query_length > (0.95 * allele_length) and float(col[2]) > 95.0:
-            #     result_list.append(element)
-            #     allele_type.append(col[1])
-
-    #TODO add when have multiple 100% fragments
-    # return
-#not finished didnt need at the time when updating program
-
-#handling all ctxB, tcpA and rstR
+#handling all alleles
 def remaining_filter_results(blast_results_dict, item, gene_size_dict,args):
 
     return_dict = {}
@@ -246,6 +240,7 @@ def remaining_filter_results(blast_results_dict, item, gene_size_dict,args):
 
         #check the blast results
         return_dict[strain] = remaining_blast_filter(format_blast_list, item, gene_size_dict,args)
+
     return return_dict
 def remaining_format_blast_output(results_list, item):
 
@@ -257,9 +252,6 @@ def remaining_format_blast_output(results_list, item):
         if item in blast_hits[number].split('\t')[1]:
             keep_list.append(blast_hits[number])
 
-    #organise blast hits by precen of id
-    keep_list = sorted(keep_list, key=itemgetter(2,11))
-
     return keep_list
 def remaining_blast_filter(format_blast_list, item, gene_size_dict, args):
 
@@ -270,10 +262,19 @@ def remaining_blast_filter(format_blast_list, item, gene_size_dict, args):
     for element in format_blast_list:
         allele_length = gene_size_dict[element[1]]
         min_return_allele_length = int(args.length / 100 * allele_length)
-        min_return_coverage = args.coverage
-        if float(min_return_coverage) <= float(element[2]) and min_return_allele_length <= int(element[3]):
-            keep = ','.join(element)
-            result_list.append(keep)
+        min_return_coverage = int(args.coverage / 100 * allele_length)
+
+        if args.return_all_blast:
+            if (min_return_allele_length <= int(element[3])) and (min_return_coverage <= int(element[3])):
+                keep = ','.join(element)
+                result_list.append(keep)
+
+        if not args.return_all_blast:
+            if (min_return_allele_length <= int(element[3])) and (min_return_coverage <= int(element[3])):
+                top_hit = format_blast_list[0]
+                keep = ','.join(top_hit)
+                result_list.append(keep)
+                break
 
     return result_list
 
@@ -298,28 +299,13 @@ def write_out_iterator(results_dict, out, args):
     biotype_headers_list = ["Accession", 'biotype'] + headers_list[1:]
 
     for key in results_dict:
-        if args.return_top == 1:
-            out.write(key + '\n')
-            #biotype has different headers
-            if key == 'bio':
-                for col_head in biotype_headers_list:
-                    out.write(col_head + ',')
-                out.write('\n')
 
-            else:
-                for col_head in headers_list:
-                    out.write(col_head + ',')
-                out.write('\n')
-
-            if key != 'bio':
-                for strain in results_dict[key]:
-                    if len(results_dict[key][strain]) > 0:
-                        top_hit = results_dict[key][strain][0]
-                        out.write(strain + ',' + top_hit + '\n')
-                    if len(results_dict[key][strain]) == 0:
-                        out.write(strain + ',' + 'Return:null' + '\n')
-
+        #adding column headers
+        out.write(key + '\n')
+        for col_head in headers_list:
+            out.write(col_head + ',')
         out.write('\n')
+        print(results_dict[key])
 
 def main():
 
@@ -336,4 +322,5 @@ def main():
 if __name__ == '__main__':
     main()
 
-#TODO must be able to type atypical strains and then within
+#TODO make multiple databases from other tool
+#TODO add abricate for antibiotic resistance
