@@ -30,7 +30,7 @@ def run_main(set_wd, args):
         print_list = []
         for i in blast_result:
             print_list.append(blast_result[i].split(',')[1])
-        print(accession, *print_list, sep='\t')
+        print(accession, *print_list, sep=',')
 
     ##writing out
     write_out(blast_result_dict, args)
