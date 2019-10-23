@@ -1,0 +1,276 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ChangeListManager">
+    <list default="true" id="52e952f6-edeb-4bec-ab30-d067c39b0152" name="Default" comment="" />
+    <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
+    <option name="TRACKING_ENABLED" value="true" />
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileEditorManager">
+    <leaf>
+      <file leaf-file-name="CTX_allele_caller.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/CTX_allele_caller.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="300">
+              <caret line="187" column="22" lean-forward="false" selection-start-line="187" selection-start-column="22" selection-end-line="187" selection-end-column="22" />
+              <folding>
+                <element signature="e#206#405#0" expanded="false" />
+                <element signature="e#312#379#0" expanded="false" />
+                <element signature="e#446#965#0" expanded="false" />
+                <element signature="e#721#939#0" expanded="false" />
+                <element signature="e#746#807#0" expanded="false" />
+                <element signature="e#835#939#0" expanded="false" />
+                <element signature="e#1020#1368#0" expanded="false" />
+                <element signature="e#1109#1346#0" expanded="false" />
+                <element signature="e#1436#1765#0" expanded="false" />
+                <element signature="e#1558#1740#0" expanded="false" />
+                <element signature="e#1853#3017#0" expanded="false" />
+                <element signature="e#2048#2228#0" expanded="false" />
+                <element signature="e#2323#2507#0" expanded="false" />
+                <element signature="e#2599#2716#0" expanded="false" />
+                <element signature="e#2771#2846#0" expanded="false" />
+                <element signature="e#2924#3017#0" expanded="false" />
+                <element signature="e#3070#4647#0" expanded="false" />
+                <element signature="e#3237#3698#0" expanded="false" />
+                <element signature="e#3380#3491#0" expanded="false" />
+                <element signature="e#3519#3698#0" expanded="false" />
+                <element signature="e#3818#4647#0" expanded="false" />
+                <element signature="e#4048#4221#0" expanded="false" />
+                <element signature="e#4344#4448#0" expanded="false" />
+                <element signature="e#4476#4647#0" expanded="false" />
+                <element signature="e#4681#4851#0" expanded="false" />
+                <element signature="e#4892#5607#0" expanded="false" />
+                <element signature="e#5125#5293#0" expanded="false" />
+                <element signature="e#5313#5607#0" expanded="false" />
+                <element signature="e#5670#6267#0" expanded="false" />
+                <element signature="e#5718#6267#0" expanded="false" />
+                <element signature="e#5990#6243#0" expanded="false" />
+                <element signature="e#6046#6243#0" expanded="false" />
+                <element signature="e#7322#7539#0" expanded="false" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="output_MGT_for_isolates.py" pinned="false" current-in-tab="true">
+        <entry file="file://$USER_HOME$/MGT_files/output_MGT_for_isolates.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="276">
+              <caret line="607" column="29" lean-forward="false" selection-start-line="607" selection-start-column="23" selection-end-line="607" selection-end-column="29" />
+              <folding>
+                <element signature="e#0#28#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+    </leaf>
+  </component>
+  <component name="FindInProjectRecents">
+    <findStrings>
+      <find>mgt_id</find>
+    </findStrings>
+    <replaceStrings>
+      <replace>hgt_id</replace>
+    </replaceStrings>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="IdeDocumentHistory">
+    <option name="CHANGED_PATHS">
+      <list>
+        <option value="$PROJECT_DIR$/CTX_allele_caller.py" />
+        <option value="$USER_HOME$/MGT_files/output_MGT_for_isolates.py" />
+      </list>
+    </option>
+  </component>
+  <component name="ProjectFrameBounds" fullScreen="true">
+    <option name="width" value="1920" />
+    <option name="height" value="1080" />
+  </component>
+  <component name="ProjectLevelVcsManager">
+    <ConfirmationsSetting value="2" id="Add" />
+  </component>
+  <component name="ProjectView">
+    <navigator currentView="ProjectPane" proportions="" version="1">
+      <flattenPackages />
+      <showMembers />
+      <showModules />
+      <showLibraryContents />
+      <hideEmptyPackages />
+      <abbreviatePackageNames />
+      <autoscrollToSource />
+      <autoscrollFromSource />
+      <sortByType />
+      <manualOrder />
+      <foldersAlwaysOnTop value="true" />
+    </navigator>
+    <panes>
+      <pane id="ProjectPane">
+        <subPane>
+          <expand>
+            <path>
+              <item name="vc_typer" type="b2602c69:ProjectViewProjectNode" />
+              <item name="vc_typer" type="462c0819:PsiDirectoryNode" />
+            </path>
+          </expand>
+          <select />
+        </subPane>
+      </pane>
+      <pane id="Scratches" />
+      <pane id="Scope" />
+    </panes>
+  </component>
+  <component name="PropertiesComponent">
+    <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable" />
+  </component>
+  <component name="RunDashboard">
+    <option name="ruleStates">
+      <list>
+        <RuleState>
+          <option name="name" value="ConfigurationTypeDashboardGroupingRule" />
+        </RuleState>
+        <RuleState>
+          <option name="name" value="StatusDashboardGroupingRule" />
+        </RuleState>
+      </list>
+    </option>
+  </component>
+  <component name="ShelveChangesManager" show_recycled="false">
+    <option name="remove_strategy" value="false" />
+  </component>
+  <component name="SvnConfiguration">
+    <configuration />
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="52e952f6-edeb-4bec-ab30-d067c39b0152" name="Default" comment="" />
+      <created>1557193213727</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1557193213727</updated>
+    </task>
+    <task id="LOCAL-00001" summary="initial">
+      <created>1557193332808</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1557193332808</updated>
+    </task>
+    <task id="LOCAL-00002" summary="initial">
+      <created>1557200220075</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1557200220075</updated>
+    </task>
+    <task id="LOCAL-00003" summary="initial">
+      <created>1557204990328</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1557204990328</updated>
+    </task>
+    <option name="localTasksCounter" value="4" />
+    <servers />
+  </component>
+  <component name="ToolWindowManager">
+    <frame x="0" y="0" width="1920" height="1080" extended-state="0" />
+    <layout>
+      <window_info id="Project" active="true" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.16850974" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
+      <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="-1" side_tool="true" content_ui="tabs" />
+      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
+      <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="-1" side_tool="false" content_ui="tabs" />
+      <window_info id="Python Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="-1" side_tool="false" content_ui="tabs" />
+      <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
+      <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.32969216" sideWeight="0.5" order="-1" side_tool="false" content_ui="tabs" />
+      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
+      <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="-1" side_tool="true" content_ui="tabs" />
+      <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
+      <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="2" side_tool="false" content_ui="combo" />
+      <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
+      <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
+      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
+      <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
+      <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
+    </layout>
+  </component>
+  <component name="VcsContentAnnotationSettings">
+    <option name="myLimit" value="2678400000" />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="initial" />
+    <option name="LAST_COMMIT_MESSAGE" value="initial" />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager />
+    <watches-manager />
+  </component>
+  <component name="editorHistoryManager">
+    <entry file="file://$PROJECT_DIR$/__init__.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/CTX_allele_caller.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="300">
+          <caret line="187" column="22" lean-forward="false" selection-start-line="187" selection-start-column="22" selection-end-line="187" selection-end-column="22" />
+          <folding>
+            <element signature="e#206#405#0" expanded="false" />
+            <element signature="e#312#379#0" expanded="false" />
+            <element signature="e#446#965#0" expanded="false" />
+            <element signature="e#721#939#0" expanded="false" />
+            <element signature="e#746#807#0" expanded="false" />
+            <element signature="e#835#939#0" expanded="false" />
+            <element signature="e#1020#1368#0" expanded="false" />
+            <element signature="e#1109#1346#0" expanded="false" />
+            <element signature="e#1436#1765#0" expanded="false" />
+            <element signature="e#1558#1740#0" expanded="false" />
+            <element signature="e#1853#3017#0" expanded="false" />
+            <element signature="e#2048#2228#0" expanded="false" />
+            <element signature="e#2323#2507#0" expanded="false" />
+            <element signature="e#2599#2716#0" expanded="false" />
+            <element signature="e#2771#2846#0" expanded="false" />
+            <element signature="e#2924#3017#0" expanded="false" />
+            <element signature="e#3070#4647#0" expanded="false" />
+            <element signature="e#3237#3698#0" expanded="false" />
+            <element signature="e#3380#3491#0" expanded="false" />
+            <element signature="e#3519#3698#0" expanded="false" />
+            <element signature="e#3818#4647#0" expanded="false" />
+            <element signature="e#4048#4221#0" expanded="false" />
+            <element signature="e#4344#4448#0" expanded="false" />
+            <element signature="e#4476#4647#0" expanded="false" />
+            <element signature="e#4681#4851#0" expanded="false" />
+            <element signature="e#4892#5607#0" expanded="false" />
+            <element signature="e#5125#5293#0" expanded="false" />
+            <element signature="e#5313#5607#0" expanded="false" />
+            <element signature="e#5670#6267#0" expanded="false" />
+            <element signature="e#5718#6267#0" expanded="false" />
+            <element signature="e#5990#6243#0" expanded="false" />
+            <element signature="e#6046#6243#0" expanded="false" />
+            <element signature="e#7322#7539#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/MGT_files/output_MGT_for_isolates.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="276">
+          <caret line="607" column="29" lean-forward="false" selection-start-line="607" selection-start-column="23" selection-end-line="607" selection-end-column="29" />
+          <folding>
+            <element signature="e#0#28#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+  </component>
+</project>
