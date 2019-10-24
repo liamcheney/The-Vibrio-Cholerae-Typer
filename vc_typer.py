@@ -153,7 +153,7 @@ def simple_write_out_iterator(results_dict, out, args):
 #smaller functions
 def check_databases_input(args):
     database_okay = True
-    accepted_databases = ['All','sero','ctxB','tcpA','rstR','sxt', 'ICE_check', 'seventh', 'species']
+    accepted_databases = ['All','sero','ctxB','tcpA','rstR','sxt', 'ICE_setD', 'seventh', 'species']
     in_split = args.databases.split(',')
     for i in in_split:
         if i not in accepted_databases:
@@ -171,7 +171,7 @@ def input_allele_lengths(set_wd, args):
 def databases_list(args):
 
     if args.databases == 'All':
-        database_list = ['sero', 'ctxB', 'tcpA', 'rstR', 'sxt', 'ICE_check', 'seventh',
+        database_list = ['sero', 'ctxB', 'tcpA', 'rstR', 'sxt', 'ICE_setD', 'seventh',
                               'species']
         return database_list
 
