@@ -24,7 +24,7 @@ def run_main(set_wd, args):
 
         # get blast results
         blast_result = blast_input_against_db(strain, blast_db_path, args)
-        blast_result = blast_result_filtering(blast_result, databases, set_wd, accession, args)
+        blast_result = blast_result_filtering(blast_result, databases, set_wd, args)
         blast_result_dict[accession] = blast_result
 
         print_list = []
@@ -33,9 +33,7 @@ def run_main(set_wd, args):
                 print_list.append('')
 
             else:
-                for element in blast_result[i]:
-                    print_list.append(element.split(',')[1])
-
+                print_list.append(blast_result[i].split(',')[1])
         print(accession, *print_list, sep=',')
 
     ##writing out
@@ -55,7 +53,7 @@ def blast_input_against_db(strain, blast_db_path, args):
     out, err = blast_string()
     out = out.splitlines()
     return out
-def blast_result_filtering(blast_results_dict, databases, set_wd, accession, args):
+def blast_result_filtering(blast_results_dict, databases, set_wd, args):
 
     # read in file of allele lengths
     gene_size_dict = input_allele_lengths(set_wd, args)
@@ -64,7 +62,7 @@ def blast_result_filtering(blast_results_dict, databases, set_wd, accession, arg
     sep_blast_results = seperate_blast_results(blast_results_dict, databases)
 
     #select the hits from each databaes
-    result_dict = selecting_hits(sep_blast_results, gene_size_dict, accession, args)
+    result_dict = selecting_hits(sep_blast_results, gene_size_dict, args)
 
     return result_dict
 
@@ -82,46 +80,24 @@ def seperate_blast_results(blast_results_dict, databases):
                 result_dict[key].append(line)
 
     return result_dict
-def selecting_hits(sep_blast_results, gene_size_dict, accession, args):
+def selecting_hits(sep_blast_results, gene_size_dict, args):
 
     result_dict = {}
     for key, value in sep_blast_results.items():
         result_dict[key] = []
         format_blast_list = [x.split('\t') for x in value]
         format_blast_list.sort(key=lambda x: (float(x[2]),int(x[3])), reverse=True)
-        save_list = []
 
         for element in format_blast_list:
             allele_length = gene_size_dict[element[1]]
             min_return_allele_length = int(args.length / 100 * allele_length)
-            length = int(element[3])
+            min_return_coverage = int(args.coverage / 100 * allele_length)
 
-            coverage = float(element[2])
-            min_return_coverage = float(args.coverage)
-
-            # print(min_return_coverage, min_return_allele_length)
-            if (min_return_allele_length <= length) and (min_return_coverage <= coverage):
+            if (min_return_allele_length <= int(element[3])) and (min_return_coverage <= int(element[3])):
                 top_hit = format_blast_list[0]
                 keep = ','.join(top_hit)
-                save_list.append(keep)
-                top_coverage = float(element[2])
-                top_length = int(element[3])
-                top_genome_positions = [int(element[6]), int(element[7])]
-
-                #takes top hit, then check for duplications or other present alleles
-                for next_element in format_blast_list[1:]:
-                    next_top_coverage = float(next_element[2])
-                    next_length = int(next_element[3])
-                    next_genome_positions = [int(next_element[6]), int(next_element[7])]
-
-                    if (min_return_allele_length <= next_length) and (min_return_coverage <= next_top_coverage):
-                        if (top_coverage == next_top_coverage) and (top_length == next_length) and (set(top_genome_positions) != set(next_genome_positions)):
-                            next_keep = ','.join(next_element)
-                            save_list.append(next_keep)
-
+                result_dict[key] = keep
                 break
-
-        result_dict[key] = save_list
 
     return result_dict
 
@@ -159,7 +135,7 @@ def write_out_iterator(results_dict, out, args):
         for strain in results_dict[key]:
             out.write(strain + ',')
             for item in results_dict[key][strain]:
-                out.write(item + ',')
+                out.write(item)
             out.write('\n')
 
         out.write('\n')
@@ -171,14 +147,13 @@ def simple_write_out_iterator(results_dict, out, args):
             if len(results_dict[strain][gene]) == 0:
                 out.write(',')
             else:
-                for element in results_dict[strain][gene]:
-                    out.write(element.split(',')[1] + ',')
+                out.write(results_dict[strain][gene].split(',')[1] + ',')
         out.write('\n')
 
 #smaller functions
 def check_databases_input(args):
     database_okay = True
-    accepted_databases = ['All','sero','ctxB','tcpA','rstR','sxt', 'ICE_setD', 'seventh', 'species']
+    accepted_databases = ['All','sero','ctxB','tcpA','rstR','sxt', 'ICE_check', 'seventh', 'species']
     in_split = args.databases.split(',')
     for i in in_split:
         if i not in accepted_databases:
@@ -196,7 +171,7 @@ def input_allele_lengths(set_wd, args):
 def databases_list(args):
 
     if args.databases == 'All':
-        database_list = ['sero', 'ctxB', 'tcpA', 'rstR', 'sxt', 'ICE_setD', 'seventh',
+        database_list = ['sero', 'ctxB', 'tcpA', 'rstR', 'sxt', 'ICE_check', 'seventh',
                               'species']
         return database_list
 
@@ -242,7 +217,6 @@ def parseargs():
     args = parser.parse_args()
 
     return args
-
 
 def main():
 
