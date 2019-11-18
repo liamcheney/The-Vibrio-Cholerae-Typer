@@ -19,6 +19,7 @@ def run_main(set_wd, args):
 
     ##blast results
     blast_result_dict = {}
+    count = 1
     for strain in glob.iglob(args.strains_directory + '/*.f*'):
         accession = strain.split('/')[-1].split('.')[0]
 
@@ -34,7 +35,8 @@ def run_main(set_wd, args):
 
             else:
                 print_list.append(blast_result[i].split(',')[1])
-        print(accession, *print_list, sep=',')
+        print(count, accession, *print_list, sep=',')
+        count = count + 1
 
     ##writing out
     write_out(blast_result_dict, args)
@@ -87,11 +89,11 @@ def selecting_hits(sep_blast_results, gene_size_dict, args):
         result_dict[key] = []
         format_blast_list = [x.split('\t') for x in value]
         format_blast_list.sort(key=lambda x: (float(x[2]),int(x[3])), reverse=True)
-
         for element in format_blast_list:
             allele_length = gene_size_dict[element[1]]
             min_return_allele_length = int(args.length / 100 * allele_length)
             min_return_coverage = int(args.coverage / 100 * allele_length)
+
 
             if (min_return_allele_length <= int(element[3])) and (min_return_coverage <= int(element[3])):
                 top_hit = format_blast_list[0]
@@ -99,6 +101,8 @@ def selecting_hits(sep_blast_results, gene_size_dict, args):
                 result_dict[key] = keep
                 break
 
+        if len(result_dict[key]) == 0:
+            print(format_blast_list[0])
     return result_dict
 
 ##writing out
