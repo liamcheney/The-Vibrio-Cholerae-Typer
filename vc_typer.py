@@ -89,21 +89,46 @@ def selecting_hits(sep_blast_results, gene_size_dict, args):
         result_dict[key] = []
         format_blast_list = [x.split('\t') for x in value]
         format_blast_list.sort(key=lambda x: (float(x[2]),int(x[3])), reverse=True)
-        for element in format_blast_list:
-            allele_length = gene_size_dict[element[1]]
-            min_return_allele_length = int(args.length / 100 * allele_length)
-            min_return_coverage = int(args.coverage / 100 * allele_length)
 
+        #create list of perfect matches
+        perfect_match_list = percet_match(format_blast_list,gene_size_dict,args)
 
-            if (min_return_allele_length <= int(element[3])) and (min_return_coverage <= int(element[3])):
-                top_hit = format_blast_list[0]
-                keep = ','.join(top_hit)
-                result_dict[key] = keep
-                break
+        if len(perfect_match_list) > 0:
+            out = ','.join(perfect_match_list)
+            result_dict[key] = out
 
-        if len(result_dict[key]) == 0:
-            print(format_blast_list[0])
+        elif len(perfect_match_list) == 0:
+            top_hit = select_top_hit(format_blast_list, gene_size_dict, args)
+            result_dict[key] = top_hit
+
     return result_dict
+def percet_match(format_blast_list,gene_size_dict,args):
+    perfect_match_list = []
+    for element in format_blast_list:
+        allele_length = gene_size_dict[element[1]]
+        return_length = int(element[3])
+        return_coverage = float(element[2])
+
+        if (return_length == allele_length) and (return_coverage == 100):
+            hit = ','.join(element)
+            perfect_match_list.append(hit)
+
+    return perfect_match_list
+def select_top_hit(format_blast_list,gene_size_dict,args):
+    keep = ''
+    for element in format_blast_list:
+        allele_length = gene_size_dict[element[1]]
+        min_return_allele_length = int(args.length / 100 * allele_length)
+        min_return_coverage = float(args.coverage)
+        return_length = int(element[3])
+        return_coverage = float(element[2])
+
+        if (return_length >= min_return_allele_length) and (return_coverage >= min_return_coverage):
+            top_hit = format_blast_list[0]
+            keep = ','.join(top_hit)
+            break
+
+    return keep
 
 ##writing out
 def write_out(results_dict, args):
