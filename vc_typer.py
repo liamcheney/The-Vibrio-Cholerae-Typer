@@ -87,6 +87,7 @@ def selecting_hits(sep_blast_results, gene_size_dict, args):
         result_dict[key] = []
         format_blast_list = [x.split('\t') for x in value]
         format_blast_list.sort(key=lambda x: (float(x[2]),int(x[3])), reverse=True)
+        print(format_blast_list)
 
         for element in format_blast_list:
             allele_length = gene_size_dict[element[1]]
