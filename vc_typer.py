@@ -30,11 +30,20 @@ def run_main(set_wd, args):
 
         print_list = []
         for i in blast_result:
-            if len(blast_result[i]) == 0:
+            if blast_result[i] is None:
                 print_list.append('')
 
-            else:
+            elif len(blast_result[i]) == 1:
                 print_list.append(blast_result[i].split(',')[1])
+
+            elif len(blast_result[i]) > 1:
+                multi_list = []
+                for x in blast_result[i].split(','):
+                    if i in x:
+                        multi_list.append(x)
+                joined = '-'.join(multi_list)
+                print_list.append(joined)
+
         print(count, accession, *print_list, sep=',')
         count = count + 1
 
@@ -82,13 +91,14 @@ def seperate_blast_results(blast_results_dict, databases):
                 result_dict[key].append(line)
 
     return result_dict
+
 def selecting_hits(sep_blast_results, gene_size_dict, args):
 
     result_dict = {}
     for key, value in sep_blast_results.items():
         result_dict[key] = []
         format_blast_list = [x.split('\t') for x in value]
-        format_blast_list.sort(key=lambda x: (float(x[2]),int(x[3])), reverse=True)
+        format_blast_list.sort(key=lambda x: (float(x[-2])))
 
         #create list of perfect matches
         perfect_match_list = percet_match(format_blast_list,gene_size_dict,args)
@@ -100,6 +110,11 @@ def selecting_hits(sep_blast_results, gene_size_dict, args):
         elif len(perfect_match_list) == 0:
             top_hit = select_top_hit(format_blast_list, gene_size_dict, args)
             result_dict[key] = top_hit
+
+            if top_hit is None and (args.returns):
+                print(str(key), "Warning: '-r' no specific blast return.")
+                out = ','.join(format_blast_list[0]) + ',warning'
+                result_dict[key] = out
 
     return result_dict
 def percet_match(format_blast_list,gene_size_dict,args):
@@ -115,20 +130,15 @@ def percet_match(format_blast_list,gene_size_dict,args):
 
     return perfect_match_list
 def select_top_hit(format_blast_list,gene_size_dict,args):
-    keep = ''
     for element in format_blast_list:
         allele_length = gene_size_dict[element[1]]
         min_return_allele_length = int(args.length / 100 * allele_length)
         min_return_coverage = float(args.coverage)
         return_length = int(element[3])
         return_coverage = float(element[2])
-
         if (return_length >= min_return_allele_length) and (return_coverage >= min_return_coverage):
-            top_hit = format_blast_list[0]
-            keep = ','.join(top_hit)
-            break
-
-    return keep
+            keep = ','.join(element)
+            return keep
 
 ##writing out
 def write_out(results_dict, args):
@@ -163,8 +173,11 @@ def write_out_iterator(results_dict, out, args):
 
         for strain in results_dict[key]:
             out.write(strain + ',')
-            for item in results_dict[key][strain]:
-                out.write(item)
+            if results_dict[key][strain] is None:
+                out.write(',')
+            else:
+                for item in results_dict[key][strain]:
+                    out.write(item)
             out.write('\n')
 
         out.write('\n')
@@ -173,7 +186,7 @@ def simple_write_out_iterator(results_dict, out, args):
     for strain in results_dict:
         out.write(strain + ',')
         for gene in results_dict[strain]:
-            if len(results_dict[strain][gene]) == 0:
+            if results_dict[strain][gene] is None:
                 out.write(',')
             else:
                 out.write(results_dict[strain][gene].split(',')[1] + ',')
@@ -240,6 +253,8 @@ def parseargs():
                         help="Minmum percetange gene can be missing nucleotides.")
     parser.add_argument("-t", "--threads", default=1,
                         help="Threads for computing.")
+    parser.add_argument("-r", "--returns", action='store_true',
+                        help="Return the highest hit if an gene is completely missing.")
 
 
 
@@ -248,6 +263,8 @@ def parseargs():
     return args
 
 def main():
+
+
 
     set_wd = path.dirname(path.abspath(__file__))
     args = parseargs()
